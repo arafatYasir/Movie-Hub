@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useDebounce } from "react-use";
 import Search from "./components/Search";
 import MovieCard from "./components/MovieCard";
 
@@ -18,12 +19,16 @@ const App = () => {
   const [error, setError] = useState("");
   const [movies, setMovies] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
 
-  const fetchMovies = async () => {
+  useDebounce(() => setDebouncedSearchTerm(searchTerm), 500, [searchTerm]);
+
+  const fetchMovies = async (query = "") => {
     setLoading(true);
     setError("");
+
     try {
-      const endpoint = `${BASE_URL}/discover/movie?sort_by=popularity.desc`;
+      const endpoint = query ? `${BASE_URL}/search/movie?query=${encodeURIComponent(query)}` : `${BASE_URL}/discover/movie?sort_by=popularity.desc`;
 
       const response = await fetch(endpoint, API_OPTIONS);
 
@@ -32,6 +37,7 @@ const App = () => {
       }
 
       const data = await response.json();
+      console.log(data);
       setMovies(data.results);
     }
     catch (error) {
@@ -43,8 +49,8 @@ const App = () => {
   }
 
   useEffect(() => {
-    fetchMovies();
-  }, [])
+    fetchMovies(debouncedSearchTerm);
+  }, [debouncedSearchTerm])
 
   return (
     <main>
